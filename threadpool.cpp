@@ -8,7 +8,7 @@ static void *worker_thread(void *args) {
     w = (worker *) args;
     pool = w->pool;
     while (true) {
-        list_element *element;
+        list_element<future> *element;
         future *future;
         if (pool->shutdown) {
             break;
@@ -26,7 +26,7 @@ static void *worker_thread(void *args) {
             continue;
         }
 //        future = list<class future, offsetof(class future, element)>::entry(element);
-        future = list_entry(element, class future, element);
+        future = element->entry();
         future->status = IN_PROGRESS;
         pthread_mutex_unlock(&pool->lock);
         future->result = (future->task)(pool, future->data);
@@ -36,7 +36,7 @@ static void *worker_thread(void *args) {
     return nullptr;
 }
 
-list_element *threadpool::steal_task() {
+list_element<future> *threadpool::steal_task() {
     for (int i = 0; i < nthreads; ++i) {
         if (!workers[i].task_queue.empty()) {
             return workers[i].task_queue.pop_front();
@@ -74,8 +74,8 @@ threadpool::~threadpool() {
     shutdown = true;
     delete[] workers;
     while (!global_queue.empty()) {
-        list_element *element = global_queue.pop_front();
-        future *future = list_entry(element, class future, element);
+        auto *element = global_queue.pop_front();
+        future *future = element->entry();
         delete future;
     }
     pthread_mutex_destroy(&lock);

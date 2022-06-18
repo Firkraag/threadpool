@@ -16,7 +16,7 @@ typedef enum {
 
 class future {
 public:
-    list_element element;
+    list_element<future> element;
     status_t status = NOT_STARTED;
     void *data;
     fork_join_task_t task;
@@ -35,15 +35,15 @@ public:
 
 class worker {
 public:
-    list task_queue;
+    list<future> task_queue;
     pthread_t tid;
     threadpool *pool;
     ~worker() {
         pthread_join(tid, nullptr);
         while (!task_queue.empty())
         {
-            list_element *element = task_queue.pop_front();
-            future *future = list_entry(element, class future, element);
+            auto *element = task_queue.pop_front();
+            auto *future = element->entry();
             delete future;
         }
     }
@@ -54,13 +54,13 @@ private:
     int nthreads;
     worker *workers;
 public:
-    list global_queue;
+    list<future> global_queue;
     bool shutdown = false;
     pthread_mutex_t lock;
 
     threadpool(int nthreads);
     future *submit(fork_join_task_t task, void *data);
-    list_element *steal_task();
+    list_element<future> *steal_task();
     ~threadpool();
 };
 
