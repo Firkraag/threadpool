@@ -1,7 +1,3 @@
-//
-// Created by wq on 2022/6/15.
-//
-
 #include "threadpool.h"
 
 static __thread worker *w = nullptr;

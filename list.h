@@ -1,9 +1,5 @@
-//
-// Created by wq on 2022/6/16.
-//
-
-#ifndef PHH_26_10_2021_SPARSH_threadpool_LIST_H
-#define PHH_26_10_2021_SPARSH_threadpool_LIST_H
+#ifndef LIST_H
+#define LIST_H
 
 #include <cstddef>
 #include <cassert>
@@ -17,7 +13,7 @@ public:
     list_element *prev;
     list_element *next;
 
-    list_element *remove();
+    void remove();
 
     void insert(list_element *before);
 
@@ -88,4 +84,4 @@ public:
 
 #define list_entry(LIST_ELEM, STRUCT, MEMBER) \
 ((STRUCT *) ((char *) LIST_ELEM - offsetof(STRUCT, MEMBER)))
-#endif //PHH_26_10_2021_SPARSH_threadpool_LIST_H
+#endif

@@ -1,9 +1,5 @@
-//
-// Created by wq on 2022/6/15.
-//
-
-#ifndef PHH_26_10_2021_SPARSH_threadpool_H
-#define PHH_26_10_2021_SPARSH_threadpool_H
+#ifndef THREADPOOL_H
+#define THREADPOOL_H
 
 #include "pthread.h"
 #include "list.h"
@@ -69,4 +65,4 @@ public:
 };
 
 
-#endif //PHH_26_10_2021_SPARSH_threadpool_H
+#endif

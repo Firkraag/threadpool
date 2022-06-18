@@ -1,8 +1,7 @@
-# Note that this defines NDEBUG, which removes all assert()s from your code
-#CXXFLAGS=-Wall -Werror -Wmissing-prototypes -DNDEBUG -O3 -std=c++17
 CC=g++
 CXX=g++
-CXXFLAGS=-Wall -O2 -std=c++11
+# Note that this defines NDEBUG, which removes all assert()s from your code
+CXXFLAGS=-Wall -Werror -Wmissing-prototypes -DNDEBUG -O3 -std=c++17
 LDFLAGS=-pthread
 # for debugging, you may use these 2
 #LDFLAGS=-pthread -fsanitize=undefined

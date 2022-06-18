@@ -1,7 +1,3 @@
-//
-// Created by wq on 2022/6/16.
-//
-
 #include "list.h"
 
 
@@ -15,11 +11,10 @@ inline bool list_element::is_tail() {
     return prev != nullptr && next == nullptr;
 }
 
-list_element *list_element::remove() {
+void list_element::remove() {
     assert(is_interior());
     prev->next = next;
     next->prev = prev;
-    return next;
 }
 
 void list_element::insert(list_element *before) {
