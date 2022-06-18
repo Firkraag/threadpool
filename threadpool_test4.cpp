@@ -21,7 +21,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#include "thread_pool.h"
+#include "threadpool.h"
 #include "threadpool_lib.h"
 
 #define DEFAULT_THREADS 2
@@ -34,7 +34,7 @@ struct time_range {
 };
 
 static void *
-test_task(thread_pool *pool, struct time_range *data) {
+test_task(threadpool *pool, struct time_range *data) {
     struct timespec sleep_time = {
             .tv_sec = 0,
             .tv_nsec = 50 * 1000 * 1000 // 50 ms should be plenty to allow for overlap
@@ -50,7 +50,7 @@ run_test(int nthreads, int ntasks) {
     struct time_range start_end[ntasks];
     struct benchmark_data *bdata = start_benchmark();
     {
-        thread_pool threadpool(nthreads);
+        threadpool threadpool(nthreads);
 
         future *futures[ntasks];
 

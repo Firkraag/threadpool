@@ -18,7 +18,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#include "thread_pool.h"
+#include "threadpool.h"
 #include "threadpool_lib.h"
 #define DEFAULT_THREADS 1
 
@@ -32,7 +32,7 @@ struct arg2 {
  * A FJ task that multiplies 2 numbers. 
  */
 static void *
-multiplier_task(thread_pool *pool, struct arg2 * data)
+multiplier_task(threadpool *pool, struct arg2 * data)
 {
     return (void *)(data->a * data->b);
 }
@@ -43,7 +43,7 @@ run_test(int nthreads)
     bool success = true;
     struct benchmark_data * bdata = start_benchmark();
     {
-        thread_pool threadpool(nthreads);
+        threadpool threadpool(nthreads);
    
 #define NTASKS 200
         future *f[NTASKS];

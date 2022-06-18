@@ -2,12 +2,12 @@
 // Created by wq on 2022/6/15.
 //
 
-#include "thread_pool.h"
+#include "threadpool.h"
 
 static __thread worker *w = nullptr;
 
 static void *worker_thread(void *args) {
-    thread_pool *pool;
+    threadpool *pool;
 
     w = (worker *) args;
     pool = w->pool;
@@ -40,7 +40,7 @@ static void *worker_thread(void *args) {
     return nullptr;
 }
 
-list_element *thread_pool::steal_task() {
+list_element *threadpool::steal_task() {
     for (int i = 0; i < nthreads; ++i) {
         if (!workers[i].task_queue.empty()) {
             return workers[i].task_queue.pop_front();
@@ -49,7 +49,7 @@ list_element *thread_pool::steal_task() {
     return nullptr;
 }
 
-thread_pool::thread_pool(int nthreads) {
+threadpool::threadpool(int nthreads) {
     this->nthreads = nthreads;
     pthread_mutex_init(&lock, NULL);
     workers = new worker[nthreads];
@@ -62,7 +62,7 @@ thread_pool::thread_pool(int nthreads) {
     }
 }
 
-future *thread_pool::submit(fork_join_task_t task, void *data) {
+future *threadpool::submit(fork_join_task_t task, void *data) {
     future *future = new class future(data, task, this);
     pthread_mutex_lock(&lock);
     if (w == nullptr) {
@@ -74,7 +74,7 @@ future *thread_pool::submit(fork_join_task_t task, void *data) {
     return future;
 }
 
-thread_pool::~thread_pool() {
+threadpool::~threadpool() {
     shutdown = true;
     delete[] workers;
     while (!global_queue.empty()) {

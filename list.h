@@ -2,8 +2,8 @@
 // Created by wq on 2022/6/16.
 //
 
-#ifndef PHH_26_10_2021_SPARSH_THREAD_POOL_LIST_H
-#define PHH_26_10_2021_SPARSH_THREAD_POOL_LIST_H
+#ifndef PHH_26_10_2021_SPARSH_threadpool_LIST_H
+#define PHH_26_10_2021_SPARSH_threadpool_LIST_H
 
 #include <cstddef>
 #include <cassert>
@@ -88,4 +88,4 @@ public:
 
 #define list_entry(LIST_ELEM, STRUCT, MEMBER) \
 ((STRUCT *) ((char *) LIST_ELEM - offsetof(STRUCT, MEMBER)))
-#endif //PHH_26_10_2021_SPARSH_THREAD_POOL_LIST_H
+#endif //PHH_26_10_2021_SPARSH_threadpool_LIST_H

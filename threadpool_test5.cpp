@@ -18,7 +18,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#include "thread_pool.h"
+#include "threadpool.h"
 #include "threadpool_lib.h"
 #define DEFAULT_THREADS 2
 #define DEFAULT_TASKS 40
@@ -32,7 +32,7 @@ struct time_range {
 static int count;
 
 static void *
-test_task(thread_pool *pool, struct time_range * data)
+test_task(threadpool *pool, struct time_range * data)
 {
     __sync_fetch_and_add(&count, 1);
     return (void *)data->taskno;
@@ -44,7 +44,7 @@ run_test(int nthreads, int ntasks)
     struct benchmark_data * bdata = start_benchmark();
     struct time_range start_end[ntasks];
     {
-        thread_pool threadpool(nthreads);
+        threadpool threadpool(nthreads);
    
         future * futures[ntasks];
 

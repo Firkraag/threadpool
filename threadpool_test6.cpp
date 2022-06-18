@@ -32,7 +32,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#include "thread_pool.h"
+#include "threadpool.h"
 #include "threadpool_lib.h"
 
 #define DEFAULT_THREADS 2
@@ -43,12 +43,12 @@ struct taskno_wrapper {
 };
 
 static void *
-inner_task(thread_pool *pool, struct taskno_wrapper *data) {
+inner_task(threadpool *pool, struct taskno_wrapper *data) {
     return (void *) data->taskno;
 }
 
 static void *
-test_task(thread_pool *pool, struct taskno_wrapper *data) {
+test_task(threadpool *pool, struct taskno_wrapper *data) {
     struct taskno_wrapper childdata = {.taskno = 2 * data->taskno};
     future *child = pool->submit((fork_join_task_t) inner_task, &childdata);
     void *result = child->get();
@@ -62,7 +62,7 @@ static int
 run_test(int nthreads, int ntasks) {
     struct benchmark_data *bdata = start_benchmark();
     {
-        thread_pool threadpool(nthreads);
+        threadpool threadpool(nthreads);
         struct taskno_wrapper *task_data = (struct taskno_wrapper *) malloc(sizeof(*task_data) * ntasks);
         future **futures = (future **) malloc(sizeof(*futures) * ntasks);
 

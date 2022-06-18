@@ -8,7 +8,7 @@ LDFLAGS=-pthread
 #LDFLAGS=-pthread -fsanitize=undefined
 #CFLAGS=-Wall -O0 -g -Werror -Wmissing-prototypes -fopenmp -fsanitize=undefined
 
-OBJ=thread_pool.o thread_pool_list.o threadpool_lib.o
+OBJ=threadpool.o list.o threadpool_lib.o
 
 #ALL=quicksort psum_test fib_test mergesort nqueens \
 #	threadpool_test threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5 \
@@ -42,5 +42,5 @@ test: $(ALL)
 #fib_test: fib_test.o $(OBJ)
 
 clean:
-	rm -f *.o $(ALL)
+	rm -f *.o $(ALL) *.json
 

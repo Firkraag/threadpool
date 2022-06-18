@@ -17,7 +17,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#include "thread_pool.h"
+#include "threadpool.h"
 #include "threadpool_lib.h"
 
 /* Data to be passed to callable. */
@@ -26,7 +26,7 @@ struct problem_parameters {
 };
 
 static void *
-fibonacci(thread_pool *pool, void *_data) {
+fibonacci(threadpool *pool, void *_data) {
     struct problem_parameters *p = (struct problem_parameters *) _data;
     if (p->n <= 1)
         return (void *) 1;
@@ -63,7 +63,7 @@ main(int ac, char *av[]) {
         usage(av[0], nthreads);
 
     int n = atoi(av[optind]);
-    thread_pool pool(nthreads);
+    threadpool pool(nthreads);
 
     struct problem_parameters roottask = {.n = (unsigned) n};
 

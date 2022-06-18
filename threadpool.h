@@ -2,15 +2,15 @@
 // Created by wq on 2022/6/15.
 //
 
-#ifndef PHH_26_10_2021_SPARSH_THREAD_POOL_H
-#define PHH_26_10_2021_SPARSH_THREAD_POOL_H
+#ifndef PHH_26_10_2021_SPARSH_threadpool_H
+#define PHH_26_10_2021_SPARSH_threadpool_H
 
 #include "pthread.h"
-#include "thread_pool_list.h"
+#include "list.h"
 
-class thread_pool;
+class threadpool;
 
-typedef void *(*fork_join_task_t)(thread_pool *pool, void *data);
+typedef void *(*fork_join_task_t)(threadpool *pool, void *data);
 
 typedef enum {
     NOT_STARTED = 0,
@@ -25,11 +25,11 @@ public:
     void *data;
     fork_join_task_t task;
     void *result;
-    thread_pool *pool;
+    threadpool *pool;
     pthread_cond_t done;
 
     void *get();
-    future(void *data, fork_join_task_t task, thread_pool *pool) : data(data), task(task), pool(pool) {
+    future(void *data, fork_join_task_t task, threadpool *pool) : data(data), task(task), pool(pool) {
         pthread_cond_init(&done, nullptr);
     }
     ~future() {
@@ -41,7 +41,7 @@ class worker {
 public:
     list task_queue;
     pthread_t tid;
-    thread_pool *pool;
+    threadpool *pool;
     ~worker() {
         pthread_join(tid, nullptr);
         while (!task_queue.empty())
@@ -53,7 +53,7 @@ public:
     }
 };
 
-class thread_pool {
+class threadpool {
 private:
     int nthreads;
     worker *workers;
@@ -62,11 +62,11 @@ public:
     bool shutdown = false;
     pthread_mutex_t lock;
 
-    thread_pool(int nthreads);
+    threadpool(int nthreads);
     future *submit(fork_join_task_t task, void *data);
     list_element *steal_task();
-    ~thread_pool();
+    ~threadpool();
 };
 
 
-#endif //PHH_26_10_2021_SPARSH_THREAD_POOL_H
+#endif //PHH_26_10_2021_SPARSH_threadpool_H

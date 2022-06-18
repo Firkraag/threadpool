@@ -17,7 +17,7 @@
 #include <sys/resource.h>
 #include <time.h>
 
-#include "thread_pool.h"
+#include "threadpool.h"
 #include "threadpool_lib.h"
 #define DEFAULT_THREADS 1
 
@@ -31,7 +31,7 @@ struct arg2 {
  * A FJ task that adds 2 numbers. 
  */
 static void *
-adder_task(thread_pool *pool, struct arg2 * data)
+adder_task(threadpool *pool, struct arg2 * data)
 {
     return (void *)(data->a + data->b);
 }
@@ -42,7 +42,7 @@ run_test(int nthreads)
     struct benchmark_data * bdata = start_benchmark();
     uintptr_t ssum;
     {
-        thread_pool threadpool(nthreads);
+        threadpool threadpool(nthreads);
    
         arg2 args = {
                 .a = 20,
