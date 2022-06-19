@@ -7,15 +7,9 @@
  *
  * Written by G. Back for CS3214 Fall 2014.
  */
-#include <pthread.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <unistd.h>
-#include <sys/time.h>
-#include <sys/resource.h>
 #include <time.h>
 
 #include "threadpool.h"

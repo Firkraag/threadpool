@@ -10,12 +10,8 @@
  *
  * Written by G. Back for CS3214 Spring 2016.
  */
-#include <pthread.h>
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <stdint.h>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>

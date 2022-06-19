@@ -42,9 +42,7 @@ public:
         pthread_join(tid, nullptr);
         while (!task_queue.empty())
         {
-            auto *element = task_queue.pop_front();
-            auto *future = element->entry();
-            delete future;
+            delete task_queue.pop_front();
         }
     }
 };
@@ -60,7 +58,7 @@ public:
 
     threadpool(int nthreads);
     future *submit(fork_join_task_t task, void *data);
-    list_element<future> *steal_task();
+    future *steal_task();
     ~threadpool();
 };
 

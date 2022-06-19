@@ -1,13 +1,9 @@
 #define _GNU_SOURCE 1
-#include <signal.h>
-
-#include <pthread.h>
 #include <time.h>
 #include <sys/time.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <stdint.h>
 #include <sys/resource.h>
 
 #include "threadpool_lib.h"

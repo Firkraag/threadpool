@@ -17,6 +17,9 @@ class list_element {
 public:
     list_element<T> *prev;
     list_element<T> *next;
+//    T *object;
+//
+//    list_element(T *object) : object(object) {}
 
     void remove() {
         assert(is_interior());
@@ -77,22 +80,22 @@ public:
         element->insert(end());
     }
 
-    void push_front(list_element<T> *element) {
-        element->insert(begin());
+//    void push_front(list_element<T> *element) {
+//        element->insert(begin());
+//
+//    }
 
-    }
-
-    list_element<T> *pop_front() {
+    T *pop_front() {
         auto *front_element = front();
         front_element->remove();
-        return front_element;
+        return front_element->entry();
     }
 
-    list_element<T> *pop_back() {
-        auto *back_element = back();
-        back_element->remove();
-        return back_element;
-    }
+//    T *pop_back() {
+//        auto *back_element = back();
+//        back_element->remove();
+//        return back_element->entry();
+//    }
 };
 
 #endif
