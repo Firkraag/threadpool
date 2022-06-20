@@ -6,39 +6,25 @@ static void *worker_thread(void *args) {
     w = (worker *) args;
     threadpool *pool = w->pool;
     while (true) {
-        future *future;
         if (pool->shutdown) {
             break;
         }
         pthread_mutex_lock(&pool->lock);
-        if (!w->task_queue.empty()) {
-            future = w->task_queue.pop_front();
-        } else if (!pool->global_queue.empty()) {
-            future = pool->global_queue.pop_front();
-        } else {
-            future = pool->steal_task();
-        }
-        if (future == nullptr) {
+        if (pool->global_queue.empty()) {
             pthread_mutex_unlock(&pool->lock);
             continue;
+        } else {
+            future *future = pool->global_queue.pop_front();
+            future->status = IN_PROGRESS;
+            pthread_mutex_unlock(&pool->lock);
+            future->result = (future->task)(pool, future->data);
+            future->status = COMPLETED;
+            pthread_cond_signal(&future->done);
         }
-        future->status = IN_PROGRESS;
-        pthread_mutex_unlock(&pool->lock);
-        future->result = (future->task)(pool, future->data);
-        future->status = COMPLETED;
-        pthread_cond_signal(&future->done);
     }
     return nullptr;
 }
 
-future *threadpool::steal_task() {
-    for (int i = 0; i < nthreads; ++i) {
-        if (!workers[i].task_queue.empty()) {
-            return workers[i].task_queue.pop_front();
-        }
-    }
-    return nullptr;
-}
 
 threadpool::threadpool(int nthreads) {
     this->nthreads = nthreads;
@@ -54,7 +40,7 @@ threadpool::threadpool(int nthreads) {
 future *threadpool::submit(fork_join_task_t task, void *data) {
     future *future = new class future(data, task, this);
     pthread_mutex_lock(&lock);
-    (w == nullptr ? global_queue : w->task_queue).push_back(&future->element);
+    global_queue.push_back(&future->element);
     pthread_mutex_unlock(&lock);
     return future;
 }

@@ -25,9 +25,11 @@ public:
     pthread_cond_t done;
 
     void *get();
+
     future(void *data, fork_join_task_t task, threadpool *pool) : data(data), task(task), pool(pool) {
         pthread_cond_init(&done, nullptr);
     }
+
     ~future() {
         pthread_cond_destroy(&done);
     }
@@ -35,15 +37,11 @@ public:
 
 class worker {
 public:
-    list<future> task_queue;
     pthread_t tid;
     threadpool *pool;
+
     ~worker() {
         pthread_join(tid, nullptr);
-        while (!task_queue.empty())
-        {
-            delete task_queue.pop_front();
-        }
     }
 };
 
@@ -57,8 +55,9 @@ public:
     pthread_mutex_t lock;
 
     threadpool(int nthreads);
+
     future *submit(fork_join_task_t task, void *data);
-    future *steal_task();
+
     ~threadpool();
 };
 
