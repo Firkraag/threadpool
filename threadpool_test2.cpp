@@ -40,7 +40,7 @@ run_test(int nthreads)
         threadpool threadpool(nthreads);
    
 #define NTASKS 200
-        future *f[NTASKS];
+        std::unique_ptr<future> f[NTASKS];
         struct arg2 *args[NTASKS];
         int i;
         for (i = 0; i < NTASKS; i++) {
@@ -52,7 +52,6 @@ run_test(int nthreads)
 
         for (i = 0; i < NTASKS; i++) {
             uintptr_t sprod = (uintptr_t) f[i]->get();
-            delete f[i];
             delete args[i];
             if (sprod != i * (i + 1))
                 success = false;

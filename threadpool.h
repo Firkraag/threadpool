@@ -1,6 +1,7 @@
 #ifndef THREADPOOL_H
 #define THREADPOOL_H
 
+#include "memory"
 #include "pthread.h"
 #include "list.h"
 
@@ -51,7 +52,7 @@ public:
 
     threadpool(int nthreads);
 
-    future *submit(fork_join_task_t task, void *data);
+    std::unique_ptr<future> submit(fork_join_task_t task, void *data);
 
     ~threadpool();
 };

@@ -41,17 +41,15 @@ adder_task(threadpool *pool, struct arg2 *data) {
 
 static void *
 test_task(threadpool *pool, struct arg2 *data) {
-    future *f1 = pool->submit((fork_join_task_t) adder_task, data);
+    auto f1 = pool->submit((fork_join_task_t) adder_task, data);
     uintptr_t r1 = (uintptr_t) f1->get();
-    delete f1;
 
     struct arg2 a2 = {
             .a = r1,
             .b = 7,
     };
-    future *f2 = pool->submit((fork_join_task_t) multiplier_task, &a2);
+    auto f2 = pool->submit((fork_join_task_t) multiplier_task, &a2);
     uintptr_t r2 = (uintptr_t) f2->get();
-    delete f2;
     return (void *) r2;
 }
 
@@ -67,10 +65,9 @@ run_test(int nthreads) {
                 .b = 4,
         };
 
-        future *sum = threadpool.submit((fork_join_task_t) test_task, &args);
+        auto sum = threadpool.submit((fork_join_task_t) test_task, &args);
 
         ssum = (uintptr_t) sum->get();
-        delete sum;
     }
     stop_benchmark(bdata);
 

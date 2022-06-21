@@ -39,12 +39,12 @@ threadpool::threadpool(int nthreads) {
     }
 }
 
-future *threadpool::submit(fork_join_task_t task, void *data) {
-    future *future = new class future(data, task, this);
+std::unique_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
+    future *fut = new class future(data, task, this);
     pthread_mutex_lock(&lock);
-    global_queue.push_back(&future->element);
+    global_queue.push_back(&fut->element);
     pthread_mutex_unlock(&lock);
-    return future;
+    return std::unique_ptr<future>(fut);
 }
 
 threadpool::~threadpool() {

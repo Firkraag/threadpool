@@ -44,10 +44,9 @@ run_test(int nthreads)
                 .b = 22,
                 };
 
-        future *sum = threadpool.submit((fork_join_task_t) adder_task, &args);
+        auto sum = threadpool.submit((fork_join_task_t) adder_task, &args);
 
         ssum = (uintptr_t) sum->get();
-        delete sum;
     }
     stop_benchmark(bdata);
 

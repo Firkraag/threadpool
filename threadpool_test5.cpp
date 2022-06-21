@@ -41,7 +41,7 @@ run_test(int nthreads, int ntasks)
     {
         threadpool threadpool(nthreads);
    
-        future * futures[ntasks];
+        std::unique_ptr<future> futures[ntasks];
 
         printf("starting %d tasks...\n", ntasks);
         count = 0;
@@ -68,7 +68,6 @@ run_test(int nthreads, int ntasks)
                 fprintf(stderr, "Wrong result, expected %d, got %lu\n", i, r);
                 abort();
             }
-            delete futures[i];
         }
 
     }
