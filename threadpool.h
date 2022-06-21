@@ -26,28 +26,23 @@ public:
 
     void *get();
 
-    future(void *data, fork_join_task_t task, threadpool *pool) : data(data), task(task), pool(pool) {
-        pthread_cond_init(&done, nullptr);
-    }
+    future(void *data, fork_join_task_t task, threadpool *pool);
 
-    ~future() {
-        pthread_cond_destroy(&done);
-    }
+    ~future();
 };
 
 class worker {
 public:
     pthread_t tid;
-    threadpool *pool;
 
-    ~worker() {
-        pthread_join(tid, nullptr);
-    }
+    void run(threadpool *pool);
+
+    ~worker();
 };
+
 
 class threadpool {
 private:
-    int nthreads;
     worker *workers;
 public:
     list<future> global_queue;

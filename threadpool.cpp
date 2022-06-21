@@ -1,10 +1,7 @@
 #include "threadpool.h"
 
-static __thread worker *w = nullptr;
-
 static void *worker_thread(void *args) {
-    w = (worker *) args;
-    threadpool *pool = w->pool;
+    threadpool *pool = (threadpool *) args;
     while (true) {
         if (pool->shutdown) {
             break;
@@ -25,15 +22,20 @@ static void *worker_thread(void *args) {
     return nullptr;
 }
 
+void worker::run(threadpool *pool) {
+    pthread_create(&tid, NULL, worker_thread, pool);
+}
+
+worker::~worker() {
+    pthread_join(tid, nullptr);
+}
 
 threadpool::threadpool(int nthreads) {
-    this->nthreads = nthreads;
     pthread_mutex_init(&lock, NULL);
     workers = new worker[nthreads];
 
     for (int i = 0; i < nthreads; i++) {
-        workers[i].pool = this;
-        pthread_create(&workers[i].tid, NULL, worker_thread, workers + i);
+        workers[i].run(this);
     }
 }
 
@@ -52,6 +54,14 @@ threadpool::~threadpool() {
         delete global_queue.pop_front();
     }
     pthread_mutex_destroy(&lock);
+}
+
+future::future(void *data, fork_join_task_t task, threadpool *pool) : data(data), task(task), pool(pool) {
+    pthread_cond_init(&done, nullptr);
+}
+
+future::~future() {
+    pthread_cond_destroy(&done);
 }
 
 void *future::get() {
