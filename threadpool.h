@@ -15,9 +15,8 @@ typedef enum {
     COMPLETED = 2
 } status_t;
 
-class future {
+class future : public list_element {
 public:
-    list_element<future> element;
     status_t status = NOT_STARTED;
     void *data;
     fork_join_task_t task;
@@ -46,7 +45,7 @@ class threadpool {
 private:
     worker *workers;
 public:
-    list<future> global_queue;
+    list global_queue;
     bool shutdown = false;
     pthread_mutex_t lock;
 

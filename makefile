@@ -28,6 +28,8 @@ threadpool_test2: threadpool_test2.o $(OBJ)
 
 threadpool_test1: threadpool_test1.o $(OBJ)
 
+fib_test: fib_test.o $(OBJ)
+
 test: $(ALL)
 	for executable in $(ALL) ; do ./$$executable; done
 #quicksort: quicksort.o $(OBJ)

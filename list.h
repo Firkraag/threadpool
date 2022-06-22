@@ -4,7 +4,6 @@
 #include <cstddef>
 #include <cassert>
 
-template<typename T>
 class list_element {
     inline bool is_interior() {
         return prev != nullptr && next != nullptr;
@@ -15,8 +14,8 @@ class list_element {
     }
 
 public:
-    list_element<T> *prev;
-    list_element<T> *next;
+    list_element *prev;
+    list_element *next;
 //    T *object;
 //
 //    list_element(T *object) : object(object) {}
@@ -27,7 +26,7 @@ public:
         next->prev = prev;
     }
 
-    void insert(list_element<T> *before) {
+    void insert(list_element *before) {
         assert(before->is_interior() || before->is_tail());
         prev = before->prev;
         next = before;
@@ -35,31 +34,27 @@ public:
         before->prev = this;
     }
 
-    T *entry() {
-        return (T *) ((char *) this - offsetof(T, element));
-    }
 
 };
 
-template<typename T>
 class list {
-    list_element<T> head;
-    list_element<T> tail;
+    list_element head;
+    list_element tail;
 
-    list_element<T> *begin() {
+    list_element *begin() {
         return head.next;
     }
 
-    list_element<T> *end() {
+    list_element *end() {
         return &tail;
     }
 
-    list_element<T> *front() {
+    list_element *front() {
         assert(!empty());
         return head.next;
     }
 
-    list_element<T> *back() {
+    list_element *back() {
         assert(!empty());
         return tail.prev;
     }
@@ -76,7 +71,7 @@ public:
         return begin() == end();
     }
 
-    void push_back(list_element<T> *element) {
+    void push_back(list_element *element) {
         element->insert(end());
     }
 
@@ -85,10 +80,10 @@ public:
 //
 //    }
 
-    T *pop_front() {
-        auto *front_element = front();
+    list_element *pop_front() {
+        auto front_element = front();
         front_element->remove();
-        return front_element->entry();
+        return front_element;
     }
 
 //    T *pop_back() {

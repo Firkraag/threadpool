@@ -28,10 +28,9 @@ fibonacci(threadpool *pool, void *_data) {
 
     struct problem_parameters left_half = {.n = p->n - 1};
     struct problem_parameters right_half = {.n = p->n - 2};
-    future *f = pool->submit((fork_join_task_t) fibonacci, &right_half);
+    auto f = pool->submit((fork_join_task_t) fibonacci, &right_half);
     uintptr_t lresult = (uintptr_t) fibonacci(pool, &left_half);
     uintptr_t rresult = (uintptr_t) f->get();
-    delete f;
     return (void *) (lresult + rresult);
 }
 
@@ -71,10 +70,9 @@ main(int ac, char *av[]) {
 
     printf("starting...\n");
     struct benchmark_data *bdata = start_benchmark();
-    future *f = pool.submit((fork_join_task_t) fibonacci, &roottask);
+    auto f = pool.submit((fork_join_task_t) fibonacci, &roottask);
     unsigned long long Fvalue = (unsigned long long) f->get();
     stop_benchmark(bdata);
-    delete f;
     if (Fvalue != F[n]) {
         printf("result %lld should be %lld\n", Fvalue, F[n]);
         abort();

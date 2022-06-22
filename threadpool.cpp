@@ -11,7 +11,7 @@ static void *worker_thread(void *args) {
             pthread_mutex_unlock(&pool->lock);
             continue;
         } else {
-            future *future = pool->global_queue.pop_front();
+            future *future = (class future *) pool->global_queue.pop_front();
             future->status = IN_PROGRESS;
             pthread_mutex_unlock(&pool->lock);
             future->result = (future->task)(pool, future->data);
@@ -42,7 +42,7 @@ threadpool::threadpool(int nthreads) {
 std::unique_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
     future *fut = new class future(data, task, this);
     pthread_mutex_lock(&lock);
-    global_queue.push_back(&fut->element);
+    global_queue.push_back(fut);
     pthread_mutex_unlock(&lock);
     return std::unique_ptr<future>(fut);
 }
@@ -51,7 +51,7 @@ threadpool::~threadpool() {
     shutdown = true;
     delete[] workers;
     while (!global_queue.empty()) {
-        delete global_queue.pop_front();
+        delete (future *) global_queue.pop_front();
     }
     pthread_mutex_destroy(&lock);
 }
@@ -67,7 +67,7 @@ future::~future() {
 void *future::get() {
     pthread_mutex_lock(&pool->lock);
     if (status == NOT_STARTED) {
-        element.remove();
+        remove();
         status = IN_PROGRESS;
         pthread_mutex_unlock(&pool->lock);
         result = task(pool, data);
