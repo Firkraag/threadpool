@@ -12,7 +12,7 @@ OBJ=threadpool.o threadpool_lib.o
 #ALL=quicksort psum_test fib_test mergesort nqueens \
 #	threadpool_test threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5 \
 #	threadpool_test6
-ALL=threadpool_test1 threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5  threadpool_test6
+ALL=threadpool_test1 threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5  threadpool_test6 future_deallocation_test
 
 all: $(ALL)
 
@@ -30,8 +30,12 @@ threadpool_test1: threadpool_test1.o $(OBJ)
 
 fib_test: fib_test.o $(OBJ)
 
+future_deallocation_test: future_deallocation_test.o $(OBJ)
+
 test: $(ALL)
 	for executable in $(ALL) ; do ./$$executable; done
+bugs: $(BUGS)
+	for bug in $(BUGS) ; do ./$$bug; done
 #quicksort: quicksort.o $(OBJ)
 #
 #nqueens: nqueens.o $(OBJ)

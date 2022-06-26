@@ -41,14 +41,14 @@ adder_task(threadpool *pool, struct arg2 *data) {
 
 static void *
 test_task(threadpool *pool, struct arg2 *data) {
-    auto f1 = pool->submit((fork_join_task_t) adder_task, data);
+    std::shared_ptr<future> f1 = pool->submit((fork_join_task_t) adder_task, data);
     uintptr_t r1 = (uintptr_t) f1->get();
 
     struct arg2 a2 = {
             .a = r1,
             .b = 7,
     };
-    auto f2 = pool->submit((fork_join_task_t) multiplier_task, &a2);
+    std::shared_ptr<future> f2 = pool->submit((fork_join_task_t) multiplier_task, &a2);
     uintptr_t r2 = (uintptr_t) f2->get();
     return (void *) r2;
 }
@@ -65,7 +65,7 @@ run_test(int nthreads) {
                 .b = 4,
         };
 
-        auto sum = threadpool.submit((fork_join_task_t) test_task, &args);
+        std::shared_ptr<future> sum = threadpool.submit((fork_join_task_t) test_task, &args);
 
         ssum = (uintptr_t) sum->get();
     }

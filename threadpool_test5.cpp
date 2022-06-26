@@ -41,7 +41,7 @@ run_test(int nthreads, int ntasks)
     {
         threadpool threadpool(nthreads);
    
-        std::unique_ptr<future> futures[ntasks];
+        std::shared_ptr<future> futures[ntasks];
 
         printf("starting %d tasks...\n", ntasks);
         count = 0;
