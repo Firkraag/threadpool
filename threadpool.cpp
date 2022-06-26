@@ -1,5 +1,6 @@
 #include "threadpool.h"
 
+
 static void *worker_thread(void *args) {
     threadpool *pool = (threadpool *) args;
     while (true) {
@@ -11,12 +12,14 @@ static void *worker_thread(void *args) {
             pthread_mutex_unlock(&pool->lock);
             continue;
         } else {
-            future *future = (class future *) pool->global_queue.pop_front();
-            future->status = IN_PROGRESS;
+            future_wrapper *wrapper = (future_wrapper *) pool->global_queue.pop_front();
+            std::shared_ptr <future> fut = wrapper->fut;
+            delete wrapper;
+            fut->status = IN_PROGRESS;
             pthread_mutex_unlock(&pool->lock);
-            future->result = (future->task)(pool, future->data);
-            future->status = COMPLETED;
-            pthread_cond_signal(&future->done);
+            fut->result = (fut->task)(pool, fut->data);
+            fut->status = COMPLETED;
+            pthread_cond_signal(&fut->done);
         }
     }
     return nullptr;
@@ -39,19 +42,19 @@ threadpool::threadpool(int nthreads) {
     }
 }
 
-std::unique_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
-    future *fut = new class future(data, task, this);
+std::shared_ptr <future> threadpool::submit(fork_join_task_t task, void *data) {
+    std::shared_ptr <future> fut = std::make_shared<future>(data, task, this);
     pthread_mutex_lock(&lock);
-    global_queue.push_back(fut);
+    global_queue.push_back(new future_wrapper(fut));
     pthread_mutex_unlock(&lock);
-    return std::unique_ptr<future>(fut);
+    return fut;
 }
 
 threadpool::~threadpool() {
     shutdown = true;
     delete[] workers;
     while (!global_queue.empty()) {
-        delete (future *) global_queue.pop_front();
+        delete (future_wrapper *) global_queue.pop_front();
     }
     pthread_mutex_destroy(&lock);
 }
@@ -67,7 +70,8 @@ future::~future() {
 void *future::get() {
     pthread_mutex_lock(&pool->lock);
     if (status == NOT_STARTED) {
-        remove();
+        wrapper->remove();
+        delete wrapper;
         status = IN_PROGRESS;
         pthread_mutex_unlock(&pool->lock);
         result = task(pool, data);
