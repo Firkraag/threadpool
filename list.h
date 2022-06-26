@@ -5,11 +5,11 @@
 #include <cassert>
 
 class list_element {
-    inline bool is_interior() {
+    inline bool is_interior() const {
         return prev != nullptr && next != nullptr;
     }
 
-    inline bool is_tail() {
+    inline bool is_tail() const {
         return prev != nullptr && next == nullptr;
     }
 
@@ -41,7 +41,7 @@ class list {
     list_element head;
     list_element tail;
 
-    list_element *begin() {
+    list_element *begin() const {
         return head.next;
     }
 

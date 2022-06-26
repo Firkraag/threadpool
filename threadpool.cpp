@@ -2,7 +2,7 @@
 
 
 static void *worker_thread(void *args) {
-    threadpool *pool = (threadpool *) args;
+    auto *pool = (threadpool *) args;
     while (true) {
         if (pool->shutdown) {
             break;
@@ -12,8 +12,8 @@ static void *worker_thread(void *args) {
             pthread_mutex_unlock(&pool->lock);
             continue;
         } else {
-            future_wrapper *wrapper = (future_wrapper *) pool->global_queue.pop_front();
-            std::shared_ptr <future> fut = wrapper->fut;
+            auto *wrapper = (future_wrapper *) pool->global_queue.pop_front();
+            std::shared_ptr<future> fut = wrapper->fut;
             delete wrapper;
             fut->status = IN_PROGRESS;
             pthread_mutex_unlock(&pool->lock);
@@ -26,7 +26,7 @@ static void *worker_thread(void *args) {
 }
 
 void worker::run(threadpool *pool) {
-    pthread_create(&tid, NULL, worker_thread, pool);
+    pthread_create(&tid, nullptr, worker_thread, pool);
 }
 
 worker::~worker() {
@@ -34,7 +34,7 @@ worker::~worker() {
 }
 
 threadpool::threadpool(int nthreads) {
-    pthread_mutex_init(&lock, NULL);
+    pthread_mutex_init(&lock, nullptr);
     workers = new worker[nthreads];
 
     for (int i = 0; i < nthreads; i++) {
@@ -42,8 +42,8 @@ threadpool::threadpool(int nthreads) {
     }
 }
 
-std::shared_ptr <future> threadpool::submit(fork_join_task_t task, void *data) {
-    std::shared_ptr <future> fut = std::make_shared<future>(data, task, this);
+std::shared_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
+    std::shared_ptr<future> fut = std::make_shared<future>(data, task, this);
     pthread_mutex_lock(&lock);
     global_queue.push_back(new future_wrapper(fut));
     pthread_mutex_unlock(&lock);
@@ -51,11 +51,24 @@ std::shared_ptr <future> threadpool::submit(fork_join_task_t task, void *data) {
 }
 
 threadpool::~threadpool() {
+    while (true) {
+        pthread_mutex_lock(&lock);
+        if (!global_queue.empty()) {
+            auto *wrapper = (future_wrapper *) global_queue.pop_front();
+            std::shared_ptr<future> fut = wrapper->fut;
+            delete wrapper;
+            fut->status = IN_PROGRESS;
+            pthread_mutex_unlock(&lock);
+            fut->task(this, fut->data);
+            fut->status = COMPLETED;
+            pthread_cond_signal(&fut->done);
+        } else {
+            pthread_mutex_unlock(&lock);
+            break;
+        }
+    }
     shutdown = true;
     delete[] workers;
-    while (!global_queue.empty()) {
-        delete (future_wrapper *) global_queue.pop_front();
-    }
     pthread_mutex_destroy(&lock);
 }
 

@@ -7,44 +7,45 @@ LDFLAGS=-pthread
 #LDFLAGS=-pthread -fsanitize=undefined
 #CFLAGS=-Wall -O0 -g -Werror -Wmissing-prototypes -fopenmp -fsanitize=undefined
 
-OBJ=threadpool.o threadpool_lib.o
+OBJS=threadpool.o threadpool_lib.o
 
 #ALL=quicksort psum_test fib_test mergesort nqueens \
 #	threadpool_test threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5 \
 #	threadpool_test6
-ALL=threadpool_test1 threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5  threadpool_test6 future_deallocation_test
+ALL=threadpool_test1 threadpool_test2 threadpool_test3 threadpool_test4 threadpool_test5  threadpool_test6 future_deallocation_test\
+	execute_jobs_at_exit_test
 
 all: $(ALL)
 
-threadpool_test6: threadpool_test6.o $(OBJ)
+threadpool_test6: threadpool_test6.o $(OBJS)
 
-threadpool_test5: threadpool_test5.o $(OBJ)
+threadpool_test5: threadpool_test5.o $(OBJS)
 
-threadpool_test4: threadpool_test4.o $(OBJ)
+threadpool_test4: threadpool_test4.o $(OBJS)
 
-threadpool_test3: threadpool_test3.o $(OBJ)
+threadpool_test3: threadpool_test3.o $(OBJS)
 
-threadpool_test2: threadpool_test2.o $(OBJ)
+threadpool_test2: threadpool_test2.o $(OBJS)
 
-threadpool_test1: threadpool_test1.o $(OBJ)
+threadpool_test1: threadpool_test1.o $(OBJS)
 
-fib_test: fib_test.o $(OBJ)
+fib_test: fib_test.o $(OBJS)
 
-future_deallocation_test: future_deallocation_test.o $(OBJ)
+future_deallocation_test: future_deallocation_test.o $(OBJS)
+
+execute_jobs_at_exit_test: execute_jobs_at_exit_test.o $(OBJS)
 
 test: $(ALL)
 	for executable in $(ALL) ; do ./$$executable; done
-bugs: $(BUGS)
-	for bug in $(BUGS) ; do ./$$bug; done
-#quicksort: quicksort.o $(OBJ)
+#quicksort: quicksort.o $(OBJS)
 #
-#nqueens: nqueens.o $(OBJ)
+#nqueens: nqueens.o $(OBJS)
 #
-#mergesort: mergesort.o $(OBJ)
+#mergesort: mergesort.o $(OBJS)
 #
-#psum_test: psum_test.o $(OBJ)
+#psum_test: psum_test.o $(OBJS)
 #
-#fib_test: fib_test.o $(OBJ)
+#fib_test: fib_test.o $(OBJS)
 
 clean:
 	rm -f *.o $(ALL) *.json
