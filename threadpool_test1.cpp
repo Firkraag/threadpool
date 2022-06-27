@@ -7,10 +7,10 @@
  *
  * Written by G. Back for CS3214 Fall 2014.
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
 
 #include "threadpool.h"
 #include "threadpool_lib.h"

@@ -1,5 +1,5 @@
-#include <time.h>
-#include <stdio.h>
+#include <ctime>
+#include <cstdio>
 extern "C" {
     /**
      * These functions are mostly used by the tests and test driver.

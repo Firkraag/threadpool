@@ -21,10 +21,10 @@
  * Written by G. Back for CS3214 Summer 2020.
  * Updated Fall 2020.
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
 
 #include "threadpool.h"
 #include "threadpool_lib.h"
@@ -56,7 +56,7 @@ run_test(int nthreads, int ntasks) {
     struct benchmark_data *bdata = start_benchmark();
     {
         threadpool threadpool(nthreads);
-        struct taskno_wrapper *task_data = (struct taskno_wrapper *) malloc(sizeof(*task_data) * ntasks);
+        auto *task_data = (struct taskno_wrapper *) malloc(sizeof(struct taskno_wrapper) * ntasks);
 //        future **futures = (future **) malloc(sizeof(*futures) * ntasks);
         std::shared_ptr<future> futures[ntasks];
         printf("starting %d tasks...\n", ntasks);
@@ -66,7 +66,7 @@ run_test(int nthreads, int ntasks) {
         }
 
         for (int i = 0; i < ntasks; i++) {
-            uintptr_t r = (uintptr_t) futures[i]->get();
+            auto r = (uintptr_t) futures[i]->get();
             // consistency check
             if (r != i) {
                 fprintf(stderr, "Wrong result, expected %d, got %lu\n", i, r);

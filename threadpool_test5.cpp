@@ -7,11 +7,11 @@
  *
  * Written by G. Back for CS3214 Spring 2016.
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/resource.h>
-#include <time.h>
+#include <ctime>
 
 #include "threadpool.h"
 #include "threadpool_lib.h"
@@ -55,14 +55,14 @@ run_test(int nthreads, int ntasks)
                 .tv_nsec = 200*1000*1000 // 200 ms should be plenty of time for those tasks to be
                         // processed.
         };
-        nanosleep(&sleep_time, NULL);
+        nanosleep(&sleep_time, nullptr);
         if (count != ntasks) {
             fprintf(stderr, "Your pool did not make progress in the absence of calls to future_get\n");
             abort();
         }
 
         for (int i = 0; i < ntasks; i++) {
-            uintptr_t r = (uintptr_t) futures[i]->get();
+            auto r = (uintptr_t) futures[i]->get();
             // consistency check
             if (r != i) {
                 fprintf(stderr, "Wrong result, expected %d, got %lu\n", i, r);

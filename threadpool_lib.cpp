@@ -1,8 +1,8 @@
 #define _GNU_SOURCE 1
-#include <time.h>
+#include <ctime>
 #include <sys/time.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <unistd.h>
 #include <sys/resource.h>
 
@@ -38,7 +38,7 @@ count_number_of_threads(void)
     while (!feof(p)) {
         int threadsleft;
         char buf[128];
-        if (fgets(buf, sizeof buf, p) == NULL)
+        if (fgets(buf, sizeof buf, p) == nullptr)
             continue;
         if (sscanf(buf, "Threads: %d\n", &threadsleft) != 1)
             continue;
@@ -72,7 +72,7 @@ count_number_of_threads(void)
 //
 static void print_rusage_as_json(FILE *output, struct rusage *usage)
 {
-    fprintf(output, "\"ru_utime\" : %ld.%06d, \"ru_stime\" : %ld.%06d, \"ru_nvcsw\" : %ld, \"ru_nivcsw\" : %ld",
+    fprintf(output, R"("ru_utime" : %ld.%06d, "ru_stime" : %ld.%06d, "ru_nvcsw" : %ld, "ru_nivcsw" : %ld)",
         usage->ru_utime.tv_sec, usage->ru_utime.tv_usec,
         usage->ru_stime.tv_sec, usage->ru_stime.tv_usec,
         usage->ru_nvcsw, usage->ru_nivcsw
@@ -103,19 +103,19 @@ struct benchmark_data {
 
 struct benchmark_data * start_benchmark(void)
 {
-    struct benchmark_data * bdata = (struct benchmark_data *) malloc(sizeof *bdata);
+    auto * bdata = (struct benchmark_data *) malloc(sizeof (struct benchmark_data));
     
     int rc = getrusage(RUSAGE_SELF, &bdata->rstart);
     if (rc == -1)
         perror("getrusage");
 
-    gettimeofday(&bdata->start, NULL);
+    gettimeofday(&bdata->start, nullptr);
     return bdata;
 }
 
 void stop_benchmark(struct benchmark_data * bdata)
 {
-    gettimeofday(&bdata->end, NULL);
+    gettimeofday(&bdata->end, nullptr);
     int rc = getrusage(RUSAGE_SELF, &bdata->rend);
     if (rc == -1)
         perror("getrusage");
@@ -129,7 +129,7 @@ void report_benchmark_results(struct benchmark_data *bdata)
     char buf[80];
     snprintf(buf, sizeof buf, "runresult.%d.json", getppid());
     FILE * f = fopen(buf, "w");
-    if (f == NULL) {
+    if (f == nullptr) {
         perror("fopen");
         abort();
     }

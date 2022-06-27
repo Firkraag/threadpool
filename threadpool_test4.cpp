@@ -10,12 +10,12 @@
  *
  * Written by G. Back for CS3214 Spring 2016.
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#include <time.h>
+#include <ctime>
 
 #include "threadpool.h"
 #include "threadpool_lib.h"
@@ -35,9 +35,9 @@ test_task(threadpool *pool, struct time_range *data) {
             .tv_sec = 0,
             .tv_nsec = 50 * 1000 * 1000 // 50 ms should be plenty to allow for overlap
     };
-    gettimeofday(&data->start, NULL);
-    nanosleep(&sleep_time, NULL);
-    gettimeofday(&data->end, NULL);
+    gettimeofday(&data->start, nullptr);
+    nanosleep(&sleep_time, nullptr);
+    gettimeofday(&data->end, nullptr);
     return (void *) data->taskno;
 }
 
@@ -57,7 +57,7 @@ run_test(int nthreads, int ntasks) {
         }
 
         for (int i = 0; i < ntasks; i++) {
-            uintptr_t r = (uintptr_t) futures[i]->get();
+            auto r = (uintptr_t) futures[i]->get();
             // consistency check
             if (r != i) {
                 fprintf(stderr, "Wrong result, expected %d, got %lu\n", i, r);

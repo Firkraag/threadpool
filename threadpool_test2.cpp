@@ -7,10 +7,10 @@
  *
  * Written by G. Back for CS3214 Fall 2014.
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
 
 #include "threadpool.h"
 #include "threadpool_lib.h"
@@ -48,7 +48,7 @@ run_test(int nthreads) {
         }
 
         for (int i = 0; i < NTASKS; i++) {
-            uintptr_t sprod = (uintptr_t) f[i]->get();
+            auto sprod = (uintptr_t) f[i]->get();
             if (sprod != i * (i + 1))
                 success = false;
         }

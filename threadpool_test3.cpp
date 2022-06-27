@@ -7,10 +7,10 @@
  *
  * Written by G. Back for CS3214 Fall 2014.
  */
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <time.h>
+#include <ctime>
 
 #include "threadpool.h"
 #include "threadpool_lib.h"
@@ -42,14 +42,14 @@ adder_task(threadpool *pool, struct arg2 *data) {
 static void *
 test_task(threadpool *pool, struct arg2 *data) {
     std::shared_ptr<future> f1 = pool->submit((fork_join_task_t) adder_task, data);
-    uintptr_t r1 = (uintptr_t) f1->get();
+    auto r1 = (uintptr_t) f1->get();
 
     struct arg2 a2 = {
             .a = r1,
             .b = 7,
     };
     std::shared_ptr<future> f2 = pool->submit((fork_join_task_t) multiplier_task, &a2);
-    uintptr_t r2 = (uintptr_t) f2->get();
+    auto r2 = (uintptr_t) f2->get();
     return (void *) r2;
 }
 
