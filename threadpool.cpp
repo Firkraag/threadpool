@@ -1,6 +1,5 @@
 #include "threadpool.h"
 
-
 static void *worker_thread(void *args) {
     auto *pool = (threadpool *) args;
     while (true) {
@@ -13,13 +12,15 @@ static void *worker_thread(void *args) {
             continue;
         } else {
             auto *wrapper = (future_wrapper *) pool->global_queue.pop_front();
-            std::shared_ptr<future> fut = wrapper->fut;
+            auto fut = wrapper->fut;
             delete wrapper;
             fut->status = IN_PROGRESS;
             pthread_mutex_unlock(&pool->lock);
             fut->result = (fut->task)(pool, fut->data);
             fut->status = COMPLETED;
+            pthread_mutex_lock(&pool->lock);
             pthread_cond_signal(&fut->done);
+            pthread_mutex_unlock(&pool->lock);
         }
     }
     return nullptr;
@@ -43,7 +44,7 @@ threadpool::threadpool(int nthreads) {
 }
 
 std::shared_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
-    std::shared_ptr<future> fut = std::make_shared<future>(data, task, this);
+    auto fut = std::make_shared<future>(data, task, this);
     pthread_mutex_lock(&lock);
     global_queue.push_back(new future_wrapper(fut));
     pthread_mutex_unlock(&lock);
@@ -55,13 +56,15 @@ threadpool::~threadpool() {
         pthread_mutex_lock(&lock);
         if (!global_queue.empty()) {
             auto *wrapper = (future_wrapper *) global_queue.pop_front();
-            std::shared_ptr<future> fut = wrapper->fut;
+            auto fut = wrapper->fut;
             delete wrapper;
             fut->status = IN_PROGRESS;
             pthread_mutex_unlock(&lock);
             fut->task(this, fut->data);
             fut->status = COMPLETED;
+            pthread_mutex_lock(&lock);
             pthread_cond_signal(&fut->done);
+            pthread_mutex_unlock(&lock);
         } else {
             pthread_mutex_unlock(&lock);
             break;
@@ -89,7 +92,9 @@ void *future::get() {
         pthread_mutex_unlock(&pool->lock);
         result = task(pool, data);
         status = COMPLETED;
+        pthread_mutex_lock(&pool->lock);
         pthread_cond_signal(&done);
+        pthread_mutex_unlock(&pool->lock);
     } else {
         while (status != COMPLETED) {
             pthread_cond_wait(&done, &pool->lock);
