@@ -17,7 +17,7 @@ typedef enum {
 
 class future_wrapper;
 
-class future : public list_element {
+class future {
 public:
     status_t status = NOT_STARTED;
     void *data;
@@ -38,7 +38,7 @@ class future_wrapper : public list_element {
 public:
     std::shared_ptr<future> fut;
 
-    future_wrapper(const std::shared_ptr<future> &fut) : fut(fut) {
+    explicit future_wrapper(const std::shared_ptr<future> &fut) : fut(fut) {
         fut->wrapper = this;
     }
 };
