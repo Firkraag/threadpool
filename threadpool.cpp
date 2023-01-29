@@ -1,4 +1,5 @@
 #include "threadpool.h"
+#include <cassert>
 
 static void *worker_thread(void *args) {
     auto *pool = (threadpool *) args;
@@ -11,14 +12,13 @@ static void *worker_thread(void *args) {
             pthread_mutex_unlock(&pool->lock);
             continue;
         } else {
-            auto *wrapper = (future_wrapper *) pool->global_queue.pop_front();
-            auto fut = wrapper->fut;
-            delete wrapper;
+            auto *fut = (future *) pool->global_queue.pop_front();
             fut->status = IN_PROGRESS;
             pthread_mutex_unlock(&pool->lock);
-            fut->result = (fut->task)(pool, fut->data);
-            fut->status = COMPLETED;
+            auto *result  = (fut->task)(pool, fut->data);
             pthread_mutex_lock(&pool->lock);
+            fut->result = result;
+            fut->status = COMPLETED;
             pthread_cond_signal(&fut->done);
             pthread_mutex_unlock(&pool->lock);
         }
@@ -43,33 +43,16 @@ threadpool::threadpool(int nthreads) {
     }
 }
 
-std::shared_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
-    auto fut = std::make_shared<future>(data, task, this);
+std::unique_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
+    auto fut = new future(data, task, this);
     pthread_mutex_lock(&lock);
-    global_queue.push_back(new future_wrapper(fut));
+    global_queue.push_back(fut);
     pthread_mutex_unlock(&lock);
-    return fut;
+    return std::unique_ptr<future>(fut);
 }
 
 threadpool::~threadpool() {
-    while (true) {
-        pthread_mutex_lock(&lock);
-        if (!global_queue.empty()) {
-            auto *wrapper = (future_wrapper *) global_queue.pop_front();
-            auto fut = wrapper->fut;
-            delete wrapper;
-            fut->status = IN_PROGRESS;
-            pthread_mutex_unlock(&lock);
-            fut->task(this, fut->data);
-            fut->status = COMPLETED;
-            pthread_mutex_lock(&lock);
-            pthread_cond_signal(&fut->done);
-            pthread_mutex_unlock(&lock);
-        } else {
-            pthread_mutex_unlock(&lock);
-            break;
-        }
-    }
+    assert(global_queue.empty());
     shutdown = true;
     delete[] workers;
     pthread_mutex_destroy(&lock);
@@ -80,19 +63,29 @@ future::future(void *data, fork_join_task_t task, threadpool *pool) : data(data)
 }
 
 future::~future() {
+    pthread_mutex_lock(&pool->lock);
+    if (status == NOT_STARTED) {
+        remove();
+        pthread_mutex_unlock(&pool->lock);
+    } else {
+        while (status != COMPLETED) {
+            pthread_cond_wait(&done, &pool->lock);
+        }
+        pthread_mutex_unlock(&pool->lock);
+    }
     pthread_cond_destroy(&done);
 }
 
 void *future::get() {
     pthread_mutex_lock(&pool->lock);
     if (status == NOT_STARTED) {
-        wrapper->remove();
-        delete wrapper;
+        remove();
         status = IN_PROGRESS;
         pthread_mutex_unlock(&pool->lock);
-        result = task(pool, data);
-        status = COMPLETED;
+        auto *result = task(pool, data);
         pthread_mutex_lock(&pool->lock);
+        this->result = result;
+        status = COMPLETED;
         pthread_cond_signal(&done);
         pthread_mutex_unlock(&pool->lock);
     } else {

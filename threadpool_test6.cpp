@@ -44,7 +44,7 @@ inner_task(threadpool *pool, struct taskno_wrapper *data) {
 static void *
 test_task(threadpool *pool, struct taskno_wrapper *data) {
     struct taskno_wrapper childdata = {.taskno = 2 * data->taskno};
-    std::shared_ptr<future> child = pool->submit((fork_join_task_t) inner_task, &childdata);
+    auto child = pool->submit((fork_join_task_t) inner_task, &childdata);
     void *result = child->get();
     if ((uintptr_t) result != 2 * data->taskno)
         abort();
@@ -58,7 +58,7 @@ run_test(int nthreads, int ntasks) {
         threadpool threadpool(nthreads);
         auto *task_data = (struct taskno_wrapper *) malloc(sizeof(struct taskno_wrapper) * ntasks);
 //        future **futures = (future **) malloc(sizeof(*futures) * ntasks);
-        std::shared_ptr<future> futures[ntasks];
+        std::unique_ptr<future> futures[ntasks];
         printf("starting %d tasks...\n", ntasks);
         for (int i = 0; i < ntasks; i++) {
             task_data[i].taskno = i;

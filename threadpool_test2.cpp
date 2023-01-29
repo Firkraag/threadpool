@@ -39,7 +39,7 @@ run_test(int nthreads) {
         threadpool threadpool(nthreads);
 
 #define NTASKS 200
-        std::shared_ptr <future> f[NTASKS];
+        std::unique_ptr <future> f[NTASKS];
         struct arg2 args[NTASKS];
         for (int i = 0; i < NTASKS; i++) {
             args[i].a = i;
