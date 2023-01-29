@@ -15,9 +15,7 @@ typedef enum {
     COMPLETED = 2
 } status_t;
 
-class future_wrapper;
-
-class future {
+class future : public list_element {
 public:
     status_t status = NOT_STARTED;
     void *data;
@@ -25,22 +23,12 @@ public:
     void *result;
     threadpool *pool;
     pthread_cond_t done;
-    future_wrapper *wrapper;
 
     void *get();
 
     future(void *data, fork_join_task_t task, threadpool *pool);
 
     ~future();
-};
-
-class future_wrapper : public list_element {
-public:
-    std::shared_ptr<future> fut;
-
-    explicit future_wrapper(const std::shared_ptr<future> &fut) : fut(fut) {
-        fut->wrapper = this;
-    }
 };
 
 class worker {
@@ -63,7 +51,7 @@ public:
 
     explicit threadpool(int nthreads);
 
-    std::shared_ptr<future> submit(fork_join_task_t task, void *data);
+    std::unique_ptr<future> submit(fork_join_task_t task, void *data);
 
     ~threadpool();
 };

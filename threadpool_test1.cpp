@@ -44,7 +44,7 @@ run_test(int nthreads)
                 .b = 22,
                 };
 
-        std::shared_ptr<future> sum = threadpool.submit((fork_join_task_t) adder_task, &args);
+        auto sum = threadpool.submit((fork_join_task_t) adder_task, &args);
 
         ssum = (uintptr_t) sum->get();
     }
