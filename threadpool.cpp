@@ -15,9 +15,8 @@ static void *worker_thread(void *args) {
             auto *fut = (future *) pool->global_queue.pop_front();
             fut->status = IN_PROGRESS;
             pthread_mutex_unlock(&pool->lock);
-            auto *result  = (fut->task)(pool, fut->data);
+            fut->result  = (fut->task)(pool, fut->data);
             pthread_mutex_lock(&pool->lock);
-            fut->result = result;
             fut->status = COMPLETED;
             pthread_cond_signal(&fut->done);
             pthread_mutex_unlock(&pool->lock);
@@ -82,9 +81,8 @@ void *future::get() {
         remove();
         status = IN_PROGRESS;
         pthread_mutex_unlock(&pool->lock);
-        auto *result = task(pool, data);
+        result = task(pool, data);
         pthread_mutex_lock(&pool->lock);
-        this->result = result;
         status = COMPLETED;
         pthread_cond_signal(&done);
         pthread_mutex_unlock(&pool->lock);

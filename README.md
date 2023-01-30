@@ -159,9 +159,7 @@ n 个任务都提交子任务, 任务调用 future::get等待子任务的结果,
 很显然, worker_thread和 future::get 中从队列中删除 future 需要加锁, 为什么future 状态设为IN_PROGRESS也要加锁, 
 这是因为会有这种状况发生: worker_thread取出任务执行, future 状态没有设为IN_PROGRESS, future::get同时执行, 发现 future 的状态是 NOT_STARTED,
 以为任务还没开始, 也试图把自身从队列中删除, 但是这时 future 已经不在队列中了.
-执行任务不用加锁, 因为子任务会等待任务占有的锁,任务等待子任务的结果, 会死锁.
-
-这就是加锁复杂的地方, 多一点少一点都不行, 必须刚刚好.
+执行任务不用加锁, 因为子任务会等待任务占有的锁,任务等待子任务的结果, 会死锁, 这就是加锁复杂的地方, 多一点少一点都不行, 必须刚刚好.
 
 future::get使用条件锁阻塞等待 future 的状态变为 COMPLETED, worker_thread在任务完成后发送信号唤醒条件锁.
 
@@ -185,7 +183,119 @@ condtional.unlock()
 在多消费者的场景中, 生产者可能用 signal唤醒多个消费者, 先唤醒的消费者消费掉资源, 后面的消费者发现资源没准备好, 
 继续阻塞, 等待下一次唤醒, 如此循环, 直到资源准备好了才往下执行.
 
+上面的 worker_thread 和 future::get有一个隐蔽的 bug: 如果 future::get 执行到`while (status != COMPLETED) {`切换到工作线程执行
+```cpp
+fut->result  = (fut->task)(pool, fut->data);
+fut->status = COMPLETED;
+pthread_cond_signal(&fut->done);
+```
+再切换回来执行`pthread_cond_wait(&done, &pool->lock);`, 就会造成 signal 先于 wait 执行,
+wait 永远阻塞, 也就是我说的第一个坑.
 
-
+上面的写法等于生产者没有锁:
+```cpp
+prepare resource
+conditional.signal()
+```
+造成 signal 可以插入`while (resource is not ready) {`和wait 之间, 所以解决的办法是再加一个锁:
+```cpp
+void *worker_thread(void *args) Vj{ // 工作线程执行的代码
+    auto *pool = (threadpool *) args;
+    while (true) {
+        pthread_mutex_lock(&pool->lock);
+        auto *fut = (future *) pool->global_queue.pop_front();
+        fut->status = IN_PROGRESS;
+        pthread_mutex_unlock(&pool->lock);
+        fut->result  = (fut->task)(pool, fut->data);
+        pthread_mutex_lock(&pool->lock);
+        fut->status = COMPLETED;
+        pthread_cond_signal(&fut->done);
+        pthread_mutex_unlock(&pool->lock);
+    }
+    return nullptr;
+}
+void *future::get() {
+    pthread_mutex_lock(&pool->lock);
+    if (status == NOT_STARTED) {
+        remove();
+        status = IN_PROGRESS;
+        pthread_mutex_unlock(&pool->lock);
+        result = task(pool, data);
+        pthread_mutex_lock(&pool->lock);
+        status = COMPLETED;
+        pthread_cond_signal(&done);
+        pthread_mutex_unlock(&pool->lock);
+    } else {
+        while (status != COMPLETED) {
+            pthread_cond_wait(&done, &pool->lock);
+        }
+        pthread_mutex_unlock(&pool->lock);
+    }
+    return result;
+}
+```
 
 # 内存管理
+future对象在三处地方被使用: 工作线程中从队列中取出执行并把任务结果存入 future, threadpool 析构时可能操作队列上剩余的future,
+比如取出 future 一一执行, threadpool.submit的调用方获得 future 并调用 future.get 获得任务结果.
+
+很明显, 不能在工作线程中刚把任务结果存入 future就析构. threadpool 析构时可以析构队列上剩余的 future, 但无法析构全部的 future.
+所以我们只有一个选择: 析构threadpool::submit返回的 future.
+
+这带来一个全新的问题: 在一个工作线程中把结果存入 future 和另一个线程析构 future 是同时进行的, 或者析构开始时 future 还在队列中, 
+这两者都迫使我们在析构函数中使用threadpool.lock, 因此 future 必须先于 threadpool 析构, threadpool开始析构时, 所有 future 都已经被
+析构, 队列为空, 这就是为什么我们在 threadpool 的析构函数开头加了一句断言`assert(global_queue.emp
+ty());`.
+
+```cpp
+future::~future() {
+    pthread_mutex_lock(&pool->lock);
+    if (status == NOT_STARTED) {
+        remove();
+        pthread_mutex_unlock(&pool->lock);
+    } else {
+        while (status != COMPLETED) {
+            pthread_cond_wait(&done, &pool->lock);
+        }
+        pthread_mutex_unlock(&pool->lock);
+    }
+    pthread_cond_destroy(&done);
+}
+```
+
+下面我们来看一下 future 析构函数的具体实现. 首先我们要获得 threadpool.lock, 然后检查 future 的状态, 
+如果是 NOT_STARTED, 只需要从队列删除 future, 没必要执行任务, 因为如果任务的返回值指向堆上的内存,
+需要释放内存, 如果不指向, 则不需要释放, 我们在 future 析构函数中无法就这点做出确切的判断. 如果状态不是NOT_STARTED,
+我们等待任务完成, 免得工作线程将结果存入 future, future 却已经被析构了, 造成 segment fault, 我们无法处理任务的返回值,
+即无法确定是不是要释放内存, 所以这里可能有内存泄露.
+
+要想没有内存泄露, 必须严格遵循如下的编程范式:
+```cpp
+pool = threadpool(nthread);
+fut1 = pool.submit(task1);
+fut2 = pool.submit(task2);
+result1 = fut1.get()
+result2 = fut2.get()
+destruct fut1
+destruct fut2
+destruct pool
+free result1 if it is allocated on heap
+free result2 if it is allocated on heap
+```
+先创建线程池, 然后提交任务, 对于每一个 future, 都调用 future.get 获取返回值, 保证任务执行完成,
+然后析构 future, 最后析构线程池. 这样的话, 到执行 future 析构函数时, future 的状态都是 COMPLETED,
+future 的析构函数可以简化成:
+
+```cpp
+future::~future() {
+    pthread_cond_destroy(&done);
+}
+```
+之所以不这么写是因为我们用unique_ptr包裹threadpool.submit返回的 future 来保证 future 先于 threadpool 被析构,
+但是无法保证线程池的使用者不会因为因为疏忽等原因忘记调用 future.get. 假如我们偷懒使用了上面简化的析构函数, 看似没有锁
+效率提高了, 但是只要遗漏了一个 future.get, 就有可能工作线程把结果存入已经被析构的 future, 造成 segment fault 程序崩溃.
+而采用上面更复杂的析构函数, 同样面对遗漏了 future.get, 后果也就是内存泄露. 内存泄露的后果可大可小,
+长期运行的程序当然不能有内存泄露, 然而对于计算斐波那契数列这种得到了结果就退出的程序, 内存泄漏其实无关紧要.
+
+如果任务的返回值类型不再是泛型, 而是一个固定类型, 则上面简化的析构函数依然有 segment fault 的风险,
+而更复杂的方案依然正确, 且不再有内存泄露, 说明这个方案具有通用性.
