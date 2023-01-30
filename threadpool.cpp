@@ -1,27 +1,27 @@
 #include "threadpool.h"
 #include <cassert>
+#include <pthread.h>
 
 static void *worker_thread(void *args) {
     auto *pool = (threadpool *) args;
     while (true) {
-        if (pool->shutdown) {
-            break;
-        }
         pthread_mutex_lock(&pool->lock);
-        if (pool->global_queue.empty()) {
-            pthread_mutex_unlock(&pool->lock);
-            continue;
-        } else {
-            auto *fut = (future *) pool->global_queue.pop_front();
-            fut->status = IN_PROGRESS;
-            pthread_mutex_unlock(&pool->lock);
-            auto *result  = (fut->task)(pool, fut->data);
-            pthread_mutex_lock(&pool->lock);
-            fut->result = result;
-            fut->status = COMPLETED;
-            pthread_cond_signal(&fut->done);
-            pthread_mutex_unlock(&pool->lock);
+        while (!pool->shutdown && pool->global_queue.empty()) {
+            pthread_cond_wait(&pool->has_task, &pool->lock);
         }
+        if (pool->shutdown) {
+          pthread_mutex_unlock(&pool->lock);
+          break;
+        }
+        auto *fut = (future *) pool->global_queue.pop_front();
+        fut->status = IN_PROGRESS;
+        pthread_mutex_unlock(&pool->lock);
+        auto *result  = (fut->task)(pool, fut->data);
+        pthread_mutex_lock(&pool->lock);
+        fut->result = result;
+        fut->status = COMPLETED;
+        pthread_cond_signal(&fut->done);
+        pthread_mutex_unlock(&pool->lock);
     }
     return nullptr;
 }
@@ -36,6 +36,7 @@ worker::~worker() {
 
 threadpool::threadpool(int nthreads) {
     pthread_mutex_init(&lock, nullptr);
+    pthread_cond_init(&has_task, nullptr);
     workers = new worker[nthreads];
 
     for (int i = 0; i < nthreads; i++) {
@@ -47,6 +48,7 @@ std::unique_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
     auto fut = new future(data, task, this);
     pthread_mutex_lock(&lock);
     global_queue.push_back(fut);
+    pthread_cond_signal(&has_task);
     pthread_mutex_unlock(&lock);
     return std::unique_ptr<future>(fut);
 }
@@ -54,8 +56,10 @@ std::unique_ptr<future> threadpool::submit(fork_join_task_t task, void *data) {
 threadpool::~threadpool() {
     assert(global_queue.empty());
     shutdown = true;
+    pthread_cond_broadcast(&has_task);
     delete[] workers;
     pthread_mutex_destroy(&lock);
+    pthread_cond_destroy(&has_task);
 }
 
 future::future(void *data, fork_join_task_t task, threadpool *pool) : data(data), task(task), pool(pool) {

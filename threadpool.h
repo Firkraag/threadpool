@@ -48,6 +48,7 @@ public:
     list global_queue;
     bool shutdown = false;
     pthread_mutex_t lock;
+    pthread_cond_t has_task;
 
     explicit threadpool(int nthreads);
 
