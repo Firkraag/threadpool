@@ -2,3 +2,4 @@
 !*.cpp
 !*.h
 !makefile
+!README*.md
