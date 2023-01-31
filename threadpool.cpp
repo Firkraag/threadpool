@@ -1,11 +1,12 @@
 #include "threadpool.h"
 #include <cassert>
+#include <pthread.h>
 
 static void *worker_thread(void *args) {
     auto *pool = (threadpool *) args;
     while (true) {
         if (pool->shutdown) {
-            break;
+          break;
         }
         pthread_mutex_lock(&pool->lock);
         if (pool->global_queue.empty()) {
