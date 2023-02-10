@@ -199,7 +199,7 @@ conditional.signal()
 ```
 造成 signal 可以插入`while (resource is not ready) {`和wait 之间, 所以解决的办法是再加一个锁:
 ```cpp
-void *worker_thread(void *args) Vj{ // 工作线程执行的代码
+void *worker_thread(void *args) { // 工作线程执行的代码
     auto *pool = (threadpool *) args;
     while (true) {
         pthread_mutex_lock(&pool->lock);
